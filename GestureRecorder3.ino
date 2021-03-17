@@ -22,10 +22,14 @@ void setup()
   }
 }
 
-void DoublePrint(const char* msg)
+void DoublePrint(const char* msg, int timeStamp)
 {
-  Serial.println(msg);
   hardwareUart.println(msg);
+  Serial.print(msg);
+  char timeStampeBuffer[12];
+  timeStampeBuffer[0] = ' ';
+  itoa(timeStamp, timeStampeBuffer+1, 10);
+  Serial.println(timeStampeBuffer);
 }
 void FormatBuffer(char* buffer, int deviceType, long timeStamp, bool isButtonPressed, 
     float aX, float aY, float aZ, 
@@ -37,10 +41,13 @@ void InterpretCommands(int numBytes);
 char commandBuffer[2000];
 int commandBufferIndex = 0;
 
+enum DeviceType
+{
+  Right = 0, Left = 1, Pod = 2
+};
+
 void loop() 
 {
-  
-
     int numBytes = hardwareUart.available();
     if(numBytes)
     {
@@ -49,7 +56,7 @@ void loop()
     if(millis() > timeoutBeforeSend)
     {
       float aX, aY, aZ, gX, gY, gZ, mX, mY, mZ;
-      int deviceType = 1;
+      int deviceType = DeviceType::Right;
   
       if (IMU.accelerationAvailable() && IMU.gyroscopeAvailable())
       {
@@ -62,7 +69,7 @@ void loop()
         int isButtonPressed = 0;
   
         FormatBuffer(buffer, deviceType, timeStamp, isButtonPressed, aX, aY, aZ, gX, gY, gZ, mX, mY, mZ);
-        DoublePrint(buffer);
+        DoublePrint(buffer, timeStamp);
       }
     }
 
@@ -208,6 +215,7 @@ void FormatBuffer(char* buffer, int deviceType, long timeStamp, bool isButtonPre
     *buffer++ = '}';
     *buffer++ = ' ';
     *buffer++ = '{';
+    mX = mY = mZ = 0;
     itoa((int)(mX * 100), buffer, 10);
     buffer += strlen(buffer);
     *buffer++ = ',';
@@ -217,6 +225,7 @@ void FormatBuffer(char* buffer, int deviceType, long timeStamp, bool isButtonPre
     itoa((int)(mZ * 100), buffer, 10);
     buffer += strlen(buffer);
     *buffer++ = '}';
-    *buffer++ = ' ';
-    itoa(timeStamp, buffer, 10);
+    *buffer++ = 0;
+  /*  *buffer++ = ' ';
+    itoa(timeStamp, buffer, 10);*/
 }
