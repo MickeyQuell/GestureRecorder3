@@ -1,14 +1,24 @@
+//#define ARDUINO_HW
+const int Rx = 34;
+const int Tx = 25;
 
+#ifdef ARDUINO_HW
 #include <Arduino_LSM9DS1.h>
-const int Rx = 4;
-const int Tx = 5;
-
 UART hardwareUart (digitalPinToPinName(Tx), digitalPinToPinName(Rx), NC, NC);
+#else
+#include <HardwareSerial.h>
+HardwareSerial hardwareUart (1);
+#endif
 
 void setup() 
 {
   Serial.begin(250000);
+#ifdef ARDUINO_HW
   hardwareUart.begin(115200);
+#else
+  hardwareUart.begin(uartSpeed, SERIAL_8N1, receivePin, transmitPin);
+#endif
+  
   if (IMU.begin(LSM9DS1Class::AccelerometerSpeeds::_952_16G, 
                 LSM9DS1Class::GyroSpeeds::_952_16Hz))
   {
@@ -26,10 +36,10 @@ void DoublePrint(const char* msg, int timeStamp)
 {
   hardwareUart.println(msg);
   Serial.print(msg);
-  char timeStampeBuffer[12];
-  timeStampeBuffer[0] = ' ';
-  itoa(timeStamp, timeStampeBuffer+1, 10);
-  Serial.println(timeStampeBuffer);
+  char timeStampBuffer[12];
+  timeStampBuffer[0] = ' ';
+  itoa(timeStamp, timeStampBuffer+1, 10);
+  Serial.println(timeStampBuffer);
 }
 void FormatBuffer(char* buffer, int deviceType, long timeStamp, bool isButtonPressed, 
     float aX, float aY, float aZ, 
@@ -184,7 +194,7 @@ void FormatBuffer(char* buffer, int deviceType, long timeStamp, bool isButtonPre
     float mX, float mY, float mZ)
 {
   // Martin... here
-    float accelMultiplier = 100.0f;
+    float accelMultiplier = 1000.0f;
     float gyroMult = 100.0f;
     
     *buffer++ = '{';
